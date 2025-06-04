@@ -4,7 +4,7 @@ import db from "@/utils/db";
 import { currentUser } from "@clerk/nextjs/server";
 import { log } from "console";
 import { redirect } from "next/navigation";
-import { productSchema } from "./schemas";
+import { productSchema, validateWithZodSchema } from "./schemas";
 
 export const fetchFeaturedProducts = async () => {
   const products = await db.product.findMany({
@@ -61,8 +61,15 @@ export const createProductAction = async (
   try {
     const rawData = Object.fromEntries(formData);
 
-    const validatedFields = productSchema.parse(rawData);
+    const validatedFields = validateWithZodSchema(productSchema, rawData);
 
+    await db.product.create({
+      data: {
+        ...validatedFields,
+        image: "/images/product-1.jpg",
+        clerkId: user.id,
+      },
+    });
     return { message: "product created" };
   } catch (error) {
     return renderError(error);
